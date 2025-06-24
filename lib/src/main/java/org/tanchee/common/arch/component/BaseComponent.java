@@ -12,19 +12,46 @@ public abstract class BaseComponent implements InjectableComponent {
 
      private final String name;
      private final Set<InjectableComponent> components = new HashSet<>();
-
-     // NOTE: may not need
      private final AtomicBoolean initialized = new AtomicBoolean(false);
-
      private final AtomicBoolean ready = new AtomicBoolean(false);
+     private final EventOutputter eventOutputter;
 
      public BaseComponent(String name) {
+         this(name, new StdoutOputter());
+     }
+
+     public BaseComponent(String name, EventOutputter eventOutputter) {
+         this(name, eventOutputter, new HashMap<String, Object>());
+         // this(name, eventOutputter, Collections.emptyMap());
          this.name = name;
+         this.eventOutputter = eventOutputter;
+     }
+
+     public BaseComponent(String name, EventOutputter eventOutputter, Map<String, Object> properties) {
+         this.name = name;
+         this.eventOutputter = eventOutputter;
+         initialize(properties);
      }
 
      public void injectComponent(InjectableComponent component) {
          if (component == this) {
-             throw new IllegalArgumentException("Cannot inject this into itself.");
+             String msg = "Cannot inject component into itself.";
+
+             emit(new ComponentEvent(
+                 ComponentEventType.INITIALIZATION, 
+                 ComponentEventStatus.ERROR,
+                 Map.of(ComponentEvent.MESSAGE_KEY, msg)
+             ));
+         }
+         List<InjectableComponent> sameNamed = components.stream()
+                                                .filter((existing) -> existing.getName().equals(component.getName()))
+                                                .collect(Collectors.toList());
+         if (sameNamed.size() > 0) {
+             String commaedNames = sameNamed.stream()
+                                    .map((c) -> c.getName())
+                                    .collect(Collectors.joining(", "));
+             String diagnosticMsg = String.format("Can't add component named \"%s\". Found %d components with the same name: %s", sameNamed.size(), commaedNames);
+             // TODO: emit issue
          }
          components.add(this);
          // TODO: emit injection event
@@ -69,6 +96,10 @@ public abstract class BaseComponent implements InjectableComponent {
          setReady(true);
      }
 
+     private void emit(ComponentEvent event) {
+         eventOutputter.emit(event);
+     }
+
      public abstract ExecutionResult execute(Map<String, Object> args);
 
      // GETTERS & SETTERS
@@ -91,10 +122,6 @@ public abstract class BaseComponent implements InjectableComponent {
          return ready.get();
      }
 
- }
+     public EventOutputter getEventOutputter() { return this.eventOutputter; }
 
- enum ExecutionStatus {
-     OK, BAD
  }
-
- record ExecutionResult(ExecutionStatus status, Map<String, Object> result) {}
