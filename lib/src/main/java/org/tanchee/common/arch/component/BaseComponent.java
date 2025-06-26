@@ -1,6 +1,14 @@
- package org.tanchee.common.arch.component;
+package org.tanchee.common.arch.component;
+
+import org.tanchee.common.arch.component.event.EventOutputter;
+import org.tanchee.common.arch.component.event.ComponentEvent;
+import org.tanchee.common.arch.component.event.ComponentEventType;
+import org.tanchee.common.arch.component.event.ComponentEventStatus;
+import org.tanchee.common.arch.component.event.StdoutOutputter;
+
 
 import java.util.HashSet;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -17,14 +25,11 @@ public abstract class BaseComponent implements InjectableComponent {
      private final EventOutputter eventOutputter;
 
      public BaseComponent(String name) {
-         this(name, new StdoutOputter());
+         this(name, new StdoutOutputter());
      }
 
      public BaseComponent(String name, EventOutputter eventOutputter) {
          this(name, eventOutputter, new HashMap<String, Object>());
-         // this(name, eventOutputter, Collections.emptyMap());
-         this.name = name;
-         this.eventOutputter = eventOutputter;
      }
 
      public BaseComponent(String name, EventOutputter eventOutputter, Map<String, Object> properties) {

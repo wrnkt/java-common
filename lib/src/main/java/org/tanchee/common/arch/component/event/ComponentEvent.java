@@ -13,6 +13,7 @@ public class ComponentEvent {
     public ComponentEvent(ComponentEventType type, Map<String, Object> data) {
         this.type = type;
         this.data = data;
+        this.status = ComponentEventStatus.OK;
     }
 
     public ComponentEvent(ComponentEventType type, ComponentEventStatus status, Map<String, Object> data) {
