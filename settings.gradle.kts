@@ -11,5 +11,5 @@ plugins {
 }
 
 rootProject.name = "tanchee-commons"
-rootProject.version = extra["version"] as String
+//rootProject.version = extra["version"] as String
 include("lib")
