@@ -1,5 +1,6 @@
 package org.tanchee.common.arch.component.event;
 
+import java.util.HashMap;
 import java.util.Map;
 
 public class ComponentEvent {
@@ -22,6 +23,39 @@ public class ComponentEvent {
         this.data = data;
     }
 
+    public ComponentEvent(ComponentEventType type, ComponentEventStatus status) {
+        this(type, status, new HashMap<>());
+    }
+
+    public static Builder builder() {
+        return new Builder();
+    }
+
+    public static class Builder {
+        private ComponentEventType type;
+        private ComponentEventStatus status;
+        private Map<String, Object> data;
+
+        public ComponentEvent build() {
+            return new ComponentEvent(this.type, this.status, this.data);
+        }
+
+        public Builder type(ComponentEventType type) {
+            this.type = type;
+            return this;
+        }
+
+        public Builder status(ComponentEventStatus status) {
+            this.status = status;
+            return this;
+        }
+
+        public Builder data(Map<String, Object> data) {
+            this.data = data;
+            return this;
+        }
+    }
+
     public ComponentEventType getType() { return type; }
 
     public ComponentEventStatus getStatus() { return status; }
@@ -39,6 +73,22 @@ public class ComponentEvent {
         }
         sb.append("{\n");
         return sb.toString();
+    }
+
+    public void clearData() {
+        this.data.clear();
+    }
+
+    public static Map<String, Object> msgMap(String msg) {
+        Map<String, Object> data = new HashMap<>();
+        data.put(MESSAGE_KEY, msg);
+        return data;
+    }
+
+    public static Map<String, Object> msgMapf(String fmt, Object... args) {
+        Map<String, Object> data = new HashMap<>();
+        data.put(MESSAGE_KEY, String.format(fmt, args));
+        return data;
     }
 
 }

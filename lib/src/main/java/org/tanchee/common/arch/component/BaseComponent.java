@@ -40,49 +40,71 @@ public abstract class BaseComponent implements InjectableComponent {
 
      public void injectComponent(InjectableComponent component) {
          if (component == this) {
-             String msg = "Cannot inject component into itself.";
-
-             emit(new ComponentEvent(
-                 ComponentEventType.INITIALIZATION, 
-                 ComponentEventStatus.ERROR,
-                 Map.of(ComponentEvent.MESSAGE_KEY, msg)
-             ));
+            emit(
+                buildFailedInjectionEvent(component, "cannot inject component into itself.")
+            );
+            return;
          }
+
          List<InjectableComponent> sameNamed = components.stream()
                                                 .filter((existing) -> existing.getName().equals(component.getName()))
                                                 .collect(Collectors.toList());
          if (sameNamed.size() > 0) {
-             String commaedNames = sameNamed.stream()
-                                    .map((c) -> c.getName())
-                                    .collect(Collectors.joining(", "));
-             String diagnosticMsg = String.format("Can't add component named \"%s\". Found %d components with the same name: %s", sameNamed.size(), commaedNames);
-             // TODO: emit issue
+            emit(
+                buildFailedInjectionEvent(component, 
+                    String.format(
+                        "Not injecting, found %d components with the same name: \"%s\"", 
+                        sameNamed.size(), 
+                        sameNamed.get(0).getName()
+                    )
+                )
+            );
+            return;
          }
-         components.add(this);
-         // TODO: emit injection event
+
+         components.add(component);
+
+         emit(
+            buildSuccessfulInjectionEvent(component)
+         );
      }
 
-     public <T extends InjectableComponent> Optional<T> getComponent(String name, Class<T> clazz) {
+    public <T extends InjectableComponent> Optional<T> getComponent(String name, Class<T> clazz) {
          List<InjectableComponent> foundComponents = components.stream()
              .filter((component) -> clazz.isInstance(clazz) && name.equals(component.getName()))
              .collect(Collectors.toList());
 
          int numFound = foundComponents.size();
 
-         if (numFound == 1) {
-             // TODO: emit found component
-             return Optional.of(clazz.cast(foundComponents.get(0)));
-         }
+        if (numFound == 1) {
+            emit(
+                new ComponentEvent(
+                    ComponentEventType.WORK, 
+                    ComponentEventStatus.OK,
+                    ComponentEvent.msgMapf(
+                        "Found component with name=%s and class=%s", 
+                        name, 
+                        clazz.getName()
+                    )
+                )
+            );
 
-        String diagnosticMsg = String.format(
-             "%d components found with name=%s and class=%s", 
-             numFound,
-             name, 
-             clazz.getName()
-         );
+            return Optional.of(clazz.cast(foundComponents.get(0)));
+        }
 
-        // TODO: emit issue
-         //
+        emit(
+            new ComponentEvent(
+                ComponentEventType.WORK, 
+                ComponentEventStatus.ERROR,
+                ComponentEvent.msgMapf(
+                    "Found %d components with name=%s and class=%s", 
+                    numFound, 
+                    name, 
+                    clazz.getName()
+                )
+            )
+        );
+
         return Optional.empty();
      }
 
@@ -128,5 +150,44 @@ public abstract class BaseComponent implements InjectableComponent {
      }
 
      public EventOutputter getEventOutputter() { return this.eventOutputter; }
+
+
+    /* EVENT GENERATION */
+    
+    private ComponentEvent buildSuccessfulInjectionEvent(InjectableComponent injected) {
+        return buildInjectionEvent(injected, true);
+    }
+
+    private ComponentEvent buildFailedInjectionEvent(InjectableComponent injected, String detailMsg) {
+        ComponentEvent event = buildFailedInjectionEvent(injected);
+        event.getData().put("msg_detail", detailMsg);
+        return event;
+    }
+
+    private ComponentEvent buildFailedInjectionEvent(InjectableComponent injected) {
+        return buildInjectionEvent(injected, false);
+    }
+
+    private ComponentEvent buildInjectionEvent(InjectableComponent injected, boolean succesful) {
+        String injectedName = 
+            (injected.getName() == null || injected.getName().isBlank()) 
+            ? injected.toString() 
+            : injected.getName();
+
+        String componentName = 
+            (this.getName() == null || this.getName().isBlank()) 
+            ? this.toString() 
+            : this.getName();
+
+        String msg = ( (succesful) ? "Succesfully injected " : "Failed to inject" )
+                    + String.format("%s into %s", injectedName, componentName);
+
+        return new ComponentEvent(
+            ComponentEventType.CONFIG,
+            (succesful) ? ComponentEventStatus.OK : ComponentEventStatus.ERROR,
+            ComponentEvent.msgMap(msg)
+        );
+    }
+
 
  }
