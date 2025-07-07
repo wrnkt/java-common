@@ -1,4 +1,4 @@
-package org.tanchee.common.lang;
+package org.tanchee.common.lang.english;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
