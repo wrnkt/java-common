@@ -19,12 +19,12 @@ import java.util.stream.Collectors;
 public abstract class BaseComponent implements InjectableComponent {
 
      private final String name;
-     private final Set<InjectableComponent> components = new HashSet<>();
-     private final AtomicBoolean initialized = new AtomicBoolean(false);
-     private final AtomicBoolean ready = new AtomicBoolean(false);
-     private final EventOutputter eventOutputter;
+    private final Set<InjectableComponent> components = new HashSet<>();
+    private final AtomicBoolean initialized = new AtomicBoolean(false);
+    private final AtomicBoolean ready = new AtomicBoolean(false);
+    private final EventOutputter eventOutputter;
 
-     public BaseComponent(String name) {
+    public BaseComponent(String name) {
          this(name, new StdoutOutputter());
      }
 
